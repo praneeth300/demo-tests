@@ -9,7 +9,7 @@ create_repo(
 
 api = HfApi(token=os.getenv("HF_TOKEN"))
 api.upload_folder(
-    folder_path="data",
+    folder_path="mlops/data",
     repo_id="praneeth232/bank-customer-churn",
     repo_type="dataset",
 )
