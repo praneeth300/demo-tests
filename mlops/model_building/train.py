@@ -1,55 +1,40 @@
-# for data manipulation
+# necessary imports
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import make_column_transformer
 from sklearn.pipeline import make_pipeline
-# for model training, tuning, and evaluation
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, classification_report, recall_score
-# for model serialization
+from sklearn.metrics import classification_report
 import joblib
-# for creating a folder
 import os
-# for hugging face space authentication to upload files
 from huggingface_hub import login, HfApi, create_repo
+import mlflow
+import mlflow.sklearn
 
+# Hugging Face API authentication
 api = HfApi()
-
 Xtrain_path = "hf://datasets/praneeth232/bank-customer-churn/Xtrain.csv"
 Xtest_path = "hf://datasets/praneeth232/bank-customer-churn/Xtest.csv"
 ytrain_path = "hf://datasets/praneeth232/bank-customer-churn/ytrain.csv"
 ytest_path = "hf://datasets/praneeth232/bank-customer-churn/ytest.csv"
 
+# Load datasets
 Xtrain = pd.read_csv(Xtrain_path)
 Xtest = pd.read_csv(Xtest_path)
 ytrain = pd.read_csv(ytrain_path)
 ytest = pd.read_csv(ytest_path)
 
-
-# List of numerical features in the dataset
+# List of numerical and categorical features
 numeric_features = [
-    'CreditScore',       # Customer's credit score
-    'Age',               # Customer's age
-    'Tenure',            # Number of years the customer has been with the bank
-    'Balance',           # Customer’s account balance
-    'NumOfProducts',     # Number of products the customer has with the bank
-    'HasCrCard',         # Whether the customer has a credit card (binary: 0 or 1)
-    'IsActiveMember',    # Whether the customer is an active member (binary: 0 or 1)
-    'EstimatedSalary'    # Customer’s estimated salary
+    'CreditScore', 'Age', 'Tenure', 'Balance', 'NumOfProducts', 'HasCrCard', 'IsActiveMember', 'EstimatedSalary'
 ]
+categorical_features = ['Geography']
 
-# List of categorical features in the dataset
-categorical_features = [
-    'Geography',         # Country where the customer resides
-]
-
-
-# Set the clas weight to handle class imbalance
+# Set the class weight to handle class imbalance
 class_weight = ytrain.value_counts()[0] / ytrain.value_counts()[1]
-class_weight
 
-# Define the preprocessing steps
+# Define preprocessing steps
 preprocessor = make_column_transformer(
     (StandardScaler(), numeric_features),
     (OneHotEncoder(handle_unknown='ignore'), categorical_features)
@@ -60,53 +45,63 @@ xgb_model = xgb.XGBClassifier(scale_pos_weight=class_weight, random_state=42)
 
 # Define hyperparameter grid
 param_grid = {
-    'xgbclassifier__n_estimators': [50, 75, 100, 125, 150],    # number of tree to build
-    'xgbclassifier__max_depth': [2, 3, 4],    # maximum depth of each tree
-    'xgbclassifier__colsample_bytree': [0.4, 0.5, 0.6],    # percentage of attributes to be considered (randomly) for each tree
-    'xgbclassifier__colsample_bylevel': [0.4, 0.5, 0.6],    # percentage of attributes to be considered (randomly) for each level of a tree
-    'xgbclassifier__learning_rate': [0.01, 0.05, 0.1],    # learning rate
-    'xgbclassifier__reg_lambda': [0.4, 0.5, 0.6],    # L2 regularization factor
+    'xgbclassifier__n_estimators': [50, 75, 100, 125, 150],
+    'xgbclassifier__max_depth': [2, 3, 4],
+    'xgbclassifier__colsample_bytree': [0.4, 0.5, 0.6],
+    'xgbclassifier__colsample_bylevel': [0.4, 0.5, 0.6],
+    'xgbclassifier__learning_rate': [0.01, 0.05, 0.1],
+    'xgbclassifier__reg_lambda': [0.4, 0.5, 0.6],
 }
 
 # Model pipeline
 model_pipeline = make_pipeline(preprocessor, xgb_model)
 
-# Hyperparameter tuning with GridSearchCV
-grid_search = GridSearchCV(model_pipeline, param_grid, cv=5, n_jobs=-1)
-grid_search.fit(Xtrain, ytrain)
+# Start MLflow run
+with mlflow.start_run():
+    # Hyperparameter tuning with GridSearchCV
+    grid_search = GridSearchCV(model_pipeline, param_grid, cv=5, n_jobs=-1)
+    grid_search.fit(Xtrain, ytrain)
 
+    # Log hyperparameters
+    mlflow.log_params(grid_search.best_params_)
 
-# Check the parameters of the best model
-grid_search.best_params_
+    # Store the best model
+    best_model = grid_search.best_estimator_
 
-# Store the best model
-best_model = grid_search.best_estimator_
-best_model
+    # Set classification threshold
+    classification_threshold = 0.45
 
-# Set the classification threshold
-classification_threshold = 0.45
+    # Make predictions on the training and test data
+    y_pred_train_proba = best_model.predict_proba(Xtrain)[:, 1]
+    y_pred_train = (y_pred_train_proba >= classification_threshold).astype(int)
 
-# Make predictions on the training data
-y_pred_train_proba = best_model.predict_proba(Xtrain)[:, 1]
-y_pred_train = (y_pred_train_proba >= classification_threshold).astype(int)
+    y_pred_test_proba = best_model.predict_proba(Xtest)[:, 1]
+    y_pred_test = (y_pred_test_proba >= classification_threshold).astype(int)
 
-# Make predictions on the test data
-y_pred_test_proba = best_model.predict_proba(Xtest)[:, 1]
-y_pred_test = (y_pred_test_proba >= classification_threshold).astype(int)
+    # Evaluation
+    train_report = classification_report(ytrain, y_pred_train, output_dict=True)
+    test_report = classification_report(ytest, y_pred_test, output_dict=True)
 
-# Generate a classification report to evaluate model performance on training set
-print(classification_report(ytrain, y_pred_train))
+    # Log metrics
+    mlflow.log_metrics({
+        "train_accuracy": train_report['accuracy'],
+        "train_precision": train_report['1']['precision'],
+        "train_recall": train_report['1']['recall'],
+        "train_f1-score": train_report['1']['f1-score'],
+        "test_accuracy": test_report['accuracy'],
+        "test_precision": test_report['1']['precision'],
+        "test_recall": test_report['1']['recall'],
+        "test_f1-score": test_report['1']['f1-score']
+    })
 
-# Generate a classification report to evaluate model performance on test set
-print(classification_report(ytest, y_pred_test))
+    # Log model
+    mlflow.sklearn.log_model(best_model, "best_churn_model")
 
-# Save best model
+# Save the best model locally
 joblib.dump(best_model, "best_churn_model.joblib")
 
-create_repo("churn-model",  # Your model repo name
-            repo_type="model",  # Specify this is a model
-            private=False)  # Set to True if it should be private
-
+# Upload to Hugging Face
+create_repo("churn-model", repo_type="model", private=False)
 api.upload_file(
     path_or_fileobj="best_churn_model.joblib",
     path_in_repo="best_churn_model.joblib",
