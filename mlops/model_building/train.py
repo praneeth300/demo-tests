@@ -12,6 +12,8 @@ from huggingface_hub import login, HfApi, create_repo
 import mlflow
 import mlflow.sklearn
 
+mlflow.set_tracking_uri("http://localhost:5000")
+
 # Hugging Face API authentication
 api = HfApi()
 Xtrain_path = "hf://datasets/praneeth232/bank-customer-churn/Xtrain.csv"
