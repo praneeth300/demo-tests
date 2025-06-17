@@ -4,7 +4,7 @@ import os
 
 
 repo_id = "praneeth232/bank-customer-churn"
-repo_type = "space"
+repo_type = "dataset"
 
 # Step 1: Check if the space exists
 try:
@@ -12,7 +12,7 @@ try:
     print(f"Space '{repo_id}' already exists. Using it.")
 except RepositoryNotFoundError:
     print(f"Space '{repo_id}' not found. Creating new space...")
-    create_repo(repo_id=repo_id, repo_type=repo_type, space_sdk=space_sdk)
+    create_repo(repo_id=repo_id, repo_type=repo_type)
     print(f"Space '{repo_id}' created.")
 
 
