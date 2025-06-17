@@ -9,6 +9,7 @@ from sklearn.metrics import classification_report
 import joblib
 import os
 from huggingface_hub import login, HfApi, create_repo
+from huggingface_hub.utils import RepositoryNotFoundError, HfHubHTTPError
 import mlflow
 import mlflow.sklearn
 
