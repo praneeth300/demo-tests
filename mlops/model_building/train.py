@@ -102,11 +102,13 @@ with mlflow.start_run():
         "test_f1-score": test_report['1']['f1-score']
     })
 
-    # Log model
-    mlflow.sklearn.log_model(best_model, name="best_churn_model")
+    # Save the model locally
+    model_path = "best_churn_model.joblib"
+    joblib.dump(best_model, model_path)
 
-# Save the best model locally
-joblib.dump(best_model, "best_churn_model.joblib")
+    # Log the model artifact
+    mlflow.log_artifact(model_path, artifact_path="model")
+    print(f"Model saved as artifact at: {model_path}")
 
 # Upload to Hugging Face
 repo_id = "praneeth232/churn-model"
