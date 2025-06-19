@@ -12,8 +12,10 @@ from huggingface_hub import login, HfApi, create_repo
 from huggingface_hub.utils import RepositoryNotFoundError, HfHubHTTPError
 import mlflow
 import mlflow.sklearn
+import dagshub
 
-mlflow.set_tracking_uri("http://localhost:5000")
+# mlflow.set_tracking_uri("http://localhost:5000")
+dagshub.init(repo_owner='praneeth300', repo_name='my-first-repo', mlflow=True)
 
 # Hugging Face API authentication
 api = HfApi()
