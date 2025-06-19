@@ -14,11 +14,14 @@ import mlflow
 import mlflow.sklearn
 import dagshub
 
-# mlflow.set_tracking_uri("http://localhost:5000")
-dagshub.init(repo_owner='praneeth300', repo_name='my-first-repo', mlflow=True)
+os.environ['MLFLOW_TRACKING_USERNAME'] = "praneeth300"
+os.environ['MLFLOW_TRACKING_PASSWORD'] = "ad3241e355dba7ea2535b74028c14c97190dac88"
+
+mlflow.set_tracking_uri("https://dagshub.com/praneeth300/my-first-repo.mlflow")
+mlflow.set_experiment("mlops-training-experiment")
 
 # Hugging Face API authentication
-api = HfApi()
+api = HfApi(token=os.getenv("HF_TOKEN"))
 Xtrain_path = "hf://datasets/praneeth232/bank-customer-churn/Xtrain.csv"
 Xtest_path = "hf://datasets/praneeth232/bank-customer-churn/Xtest.csv"
 ytrain_path = "hf://datasets/praneeth232/bank-customer-churn/ytrain.csv"
@@ -108,8 +111,6 @@ joblib.dump(best_model, "best_churn_model.joblib")
 # Upload to Hugging Face
 repo_id = "praneeth232/churn-model"
 repo_type = "model"
-
-api = HfApi(token=os.getenv("HF_TOKEN"))
 
 # Step 1: Check if the space exists
 try:
