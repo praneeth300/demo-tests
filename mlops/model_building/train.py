@@ -103,7 +103,7 @@ with mlflow.start_run():
     })
 
     # Log model
-    mlflow.sklearn.log_model(best_model, "best_churn_model")
+    mlflow.sklearn.log_model(best_model, name="best_churn_model")
 
 # Save the best model locally
 joblib.dump(best_model, "best_churn_model.joblib")
