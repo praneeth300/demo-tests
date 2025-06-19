@@ -17,7 +17,7 @@ import dagshub
 os.environ['MLFLOW_TRACKING_USERNAME'] = "praneeth300"
 os.environ['MLFLOW_TRACKING_PASSWORD'] = "ad3241e355dba7ea2535b74028c14c97190dac88"
 
-mlflow.set_tracking_uri("https://dagshub.com/praneeth300/my-first-repo.mlflow")
+mlflow.set_tracking_uri("https://dagshub.com/praneeth300/my-first-repo.mlflow/")
 mlflow.set_experiment("mlops-training-experiment")
 
 # Hugging Face API authentication
