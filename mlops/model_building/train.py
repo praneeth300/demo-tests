@@ -7,18 +7,13 @@ import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 import joblib
-import os
 from huggingface_hub import login, HfApi, create_repo
 from huggingface_hub.utils import RepositoryNotFoundError, HfHubHTTPError
 import mlflow
-import mlflow.sklearn
-import dagshub
+import os
 
-os.environ['MLFLOW_TRACKING_USERNAME'] = "praneeth300"
-os.environ['MLFLOW_TRACKING_PASSWORD'] = "ad3241e355dba7ea2535b74028c14c97190dac88"
-
-mlflow.set_tracking_uri("https://dagshub.com/praneeth300/my-first-repo.mlflow/")
-mlflow.set_experiment("mlops-training-experiment-3")
+mlflow.set_tracking_uri("http://localhost:8080")
+mlflow.set_experiment("mlops-training-experiment")
 
 # Hugging Face API authentication
 api = HfApi(token=os.getenv("HF_TOKEN"))
