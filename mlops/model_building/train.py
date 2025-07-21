@@ -22,7 +22,7 @@ mlflow.set_experiment("mlops-training-experiment")
 api = HfApi()
 
 
-Xtrain_path = "hf://datasets/praneeth/bank-customer-churn/Xtrain.csv"
+Xtrain_path = "hf://datasets/praneeth232/bank-customer-churn/Xtrain.csv"
 Xtest_path = "hf://datasets/praneeth232/bank-customer-churn/Xtest.csv"
 ytrain_path = "hf://datasets/praneeth232/bank-customer-churn/ytrain.csv"
 ytest_path = "hf://datasets/praneeth232/bank-customer-churn/ytest.csv"
